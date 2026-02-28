@@ -1,0 +1,22 @@
+# node modules
+node_modules/
+frontend/node_modules/
+server/node_modules/
+
+# env files
+.env
+frontend/.env
+server/.env
+
+# uploads
+server/uploads/
+server/tmp/
+
+# misc
+*.log
+.DS_Store
+serviceAccountKey.json
+.env
+frontend/server/serviceAccountKey.json
+.env
+frontend/server/.env
