@@ -34,17 +34,31 @@ export default function ImageEnhancer() {
     }
   }, []);
 
+  /* MEMORY CLEANUP */
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+      if (result) URL.revokeObjectURL(result);
+    };
+  }, [preview, result]);
+
+  /* FILE SELECT */
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // revoke old preview
+    if (preview) URL.revokeObjectURL(preview);
+
+    const previewUrl = URL.createObjectURL(file);
+
     setImage(file);
-    setPreview(URL.createObjectURL(file));
+    setPreview(previewUrl);
     setResult(null);
   };
 
   /* =========================
-     MAIN UPLOAD
+     MAIN ENHANCE
   ========================= */
   const handleEnhance = async () => {
     const user = auth.currentUser;
@@ -73,23 +87,30 @@ export default function ImageEnhancer() {
 
       const blob = await uploadImage("/enhance", formData);
 
-      setTimeout(() => {
-        setResult(URL.createObjectURL(blob));
-        markUsageSuccess(!!user);
-        setLoading(false);
-      }, 1500);
+      if (!blob || blob.size === 0) {
+        throw new Error("EMPTY_BLOB");
+      }
+
+      // revoke old result
+      if (result) URL.revokeObjectURL(result);
+
+      const resultUrl = URL.createObjectURL(blob);
+      setResult(resultUrl);
+
+      markUsageSuccess(!!user);
 
     } catch (err) {
       console.log(err);
 
       if (err.message === "LOGIN_REQUIRED") {
         setGate({ open: true, type: "login" });
-      }
-
-      if (err.message === "PREMIUM_REQUIRED") {
+      } else if (err.message === "PREMIUM_REQUIRED") {
         setGate({ open: true, type: "premium" });
+      } else {
+        alert("Enhance failed. Try another image.");
       }
 
+    } finally {
       setLoading(false);
     }
   };
@@ -214,7 +235,6 @@ export default function ImageEnhancer() {
     </>
   );
 }
-
 const css = `
   :root{
     --bg0:#050714;

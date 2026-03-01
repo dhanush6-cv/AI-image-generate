@@ -1,7 +1,11 @@
 import axios from "axios";
 import { auth } from "../firebase";
 
-const BASE = "import.meta.env.VITE_API_URL";
+/* ✅ IMPORTANT — NO QUOTES */
+const BASE = import.meta.env.VITE_API_URL;
+
+/* fallback (optional safety) */
+const API_BASE = BASE || "http://localhost:5000";
 
 function getDeviceId() {
   let id = localStorage.getItem("deviceId");
@@ -19,35 +23,39 @@ export async function uploadImage(path, formData) {
 
     const headers = {
       "x-device-id": deviceId,
-      // NOTE: axios auto sets multipart boundary when you DON'T set Content-Type manually
     };
 
     if (user) {
       const token = await user.getIdToken();
       headers.Authorization = `Bearer ${token}`;
-      headers["x-user-id"] = user.uid; // optional
+      headers["x-user-id"] = user.uid;
     }
 
-    const res = await axios.post(`${BASE}${path}`, formData, {
+    const res = await axios.post(`${API_BASE}${path}`, formData, {
       headers,
       responseType: "blob",
     });
 
+    // ✅ IMPORTANT — check empty blob
+    if (!res.data || res.data.size === 0) {
+      throw new Error("EMPTY_RESPONSE");
+    }
+
     return res.data;
+
   } catch (err) {
+    const status = err?.response?.status;
     const code = err?.response?.data?.code;
 
-    // server returns 402 with {code:"LOGIN_REQUIRED"} or {code:"PREMIUM_REQUIRED"}
-    if (err?.response?.status === 402 && code) {
+    if (status === 402 && code) {
       throw new Error(code);
     }
 
-    // some times blob error -> parse not possible
-    if (err?.response?.status === 402) {
+    if (status === 402) {
       throw new Error("PREMIUM_REQUIRED");
     }
 
-    console.log("UPLOAD ERROR:", err?.response?.status, err?.response?.data || err.message);
+    console.log("UPLOAD ERROR:", status, err?.response?.data || err.message);
     throw new Error("UPLOAD_FAILED");
   }
 }

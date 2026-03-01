@@ -24,7 +24,7 @@ export default function Sketch() {
 
   const stars = useMemo(() => Array.from({ length: 46 }, (_, i) => i), []);
 
-  /* ================= DEVICE ID ================= */
+  /* DEVICE ID */
   useEffect(() => {
     let id = localStorage.getItem("deviceId");
     if (!id) {
@@ -33,9 +33,7 @@ export default function Sketch() {
     }
   }, []);
 
-  /* ================= NEW ACCOUNT = RESET 2 FREE ================= */
-
-  /* cleanup urls */
+  /* MEMORY CLEANUP */
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -43,6 +41,7 @@ export default function Sketch() {
     };
   }, [preview, result]);
 
+  /* PICK IMAGE */
   const handlePick = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -50,18 +49,19 @@ export default function Sketch() {
     if (preview) URL.revokeObjectURL(preview);
     if (result) URL.revokeObjectURL(result);
 
+    const previewUrl = URL.createObjectURL(file);
+
     setImage(file);
-    setPreview(URL.createObjectURL(file));
+    setPreview(previewUrl);
     setResult("");
     setMsg("");
   };
 
-  /* ================= CONVERT TO SKETCH ================= */
+  /* ================= CONVERT ================= */
   const handleConvert = async () => {
     const user = auth.currentUser;
     const premium = getPremium();
 
-    /* ---------- FRONTEND GATE (same as ImageEnhancer) ---------- */
     if (!user) {
       if (getAnonUsed() >= 1) {
         setGate({ open: true, type: "login" });
@@ -75,7 +75,7 @@ export default function Sketch() {
     }
 
     if (!image || loading) {
-      if (!image) setMsg("Please choose an image first.");
+      if (!image) setMsg("Please choose image first");
       return;
     }
 
@@ -88,13 +88,19 @@ export default function Sketch() {
 
       const blob = await uploadImage("/sketch", formData);
 
+      // ✅ IMPORTANT — empty image check
+      if (!blob || blob.size === 0) {
+        throw new Error("EMPTY_IMAGE");
+      }
+
+      if (result) URL.revokeObjectURL(result);
+
       const url = URL.createObjectURL(blob);
       setResult(url);
 
-      // ✅ mark success (increments local counters)
       markUsageSuccess(!!user);
+      setMsg("✅ Sketch generated successfully");
 
-      setMsg("✅ Sketch generated successfully!");
     } catch (err) {
       console.log(err);
 
@@ -102,23 +108,28 @@ export default function Sketch() {
         setGate({ open: true, type: "login" });
         return;
       }
+
       if (err.message === "PREMIUM_REQUIRED") {
         setGate({ open: true, type: "premium" });
         return;
       }
 
-      setMsg("❌ Sketch failed. Try again.");
+      setMsg("❌ Sketch failed. Try another image.");
+
     } finally {
       setLoading(false);
     }
   };
 
+  /* DOWNLOAD */
   const handleDownload = () => {
     if (!result) return;
     const a = document.createElement("a");
     a.href = result;
     a.download = "pencil-sketch.png";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -126,44 +137,29 @@ export default function Sketch() {
       <style>{css}</style>
 
       <div className="skPage">
-        {/* 🌌 SAME SPACE BG (REALISTIC) */}
         <div className="bgFx" aria-hidden="true">
           <div className="bgBase" />
           <div className="orb o1" />
           <div className="orb o2" />
           <div className="orb o3" />
           <div className="orb o4" />
-
           <div className="starLayer">
             {stars.map((i) => {
               const top = (i * 37) % 100;
               const left = (i * 61) % 100;
-              const delay = (i % 9) * 0.22;
-              const dur = 2.6 + (i % 7) * 0.45;
-              const size = i % 11 === 0 ? 3 : 2;
-
               return (
                 <span
                   key={i}
                   className="star"
-                  style={{
-                    top: `${top}%`,
-                    left: `${left}%`,
-                    width: `${size}px`,
-                    height: `${size}px`,
-                    animationDelay: `${delay}s`,
-                    animationDuration: `${dur}s`,
-                  }}
+                  style={{ top: `${top}%`, left: `${left}%` }}
                 />
               );
             })}
           </div>
-
           <div className="grain" />
           <div className="vignette" />
         </div>
 
-        {/* Home button (TOP RIGHT like BgRemove) */}
         <button className="homeBtn" onClick={() => navigate("/")}>
           ⟵ Home
         </button>
@@ -171,25 +167,18 @@ export default function Sketch() {
         <div className="card">
           <div className="header">
             <div className="badge">✏️ Pencil Sketch</div>
-
-            {/* ✅ Light passing heading */}
-            <h1 className="heroTitle neonFlicker">
-              <span className="sweepText sweepSlow">Turn Photo Into Pencil Sketch</span>
+            <h1 className="heroTitle">
+              <span className="sweepText sweepSlow">
+                Turn Photo Into Pencil Sketch
+              </span>
             </h1>
-
-            <p className="heroSub">Upload → Generate → Download HD PNG</p>
+            <p className="heroSub">Upload → Generate → Download HD</p>
           </div>
 
           <div className="grid">
             <div className="panel">
-              <div className="panelTitle">
-                <span className="sweepText sweepFast">Upload</span>
-              </div>
-
               <label className="uploadBox">
-                <span className="uploadGlow" />
                 <span className="uploadMain">Click to Upload</span>
-                <span className="uploadHint">PNG / JPG supported</span>
                 <input type="file" accept="image/*" onChange={handlePick} hidden />
               </label>
 
@@ -209,16 +198,11 @@ export default function Sketch() {
             </div>
 
             <div className="panel">
-              <div className="panelTitle">
-                <span className="sweepText sweepAlt">Result</span>
-              </div>
-
               {result ? (
                 <>
                   <div className="imgWrap">
                     <img src={result} className="img" alt="result" />
                   </div>
-
                   <button className="btnDownload" onClick={handleDownload}>
                     Download HD
                   </button>
@@ -239,7 +223,6 @@ export default function Sketch() {
     </>
   );
 }
-
 const css = `
   :root{
     --bg0:#050714;

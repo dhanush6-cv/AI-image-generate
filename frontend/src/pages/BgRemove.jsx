@@ -32,11 +32,24 @@ export default function BgRemove() {
     }
   }, []);
 
+  /* CLEANUP preview + result memory */
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+      if (resultImage) URL.revokeObjectURL(resultImage);
+    };
+  }, [preview, resultImage]);
+
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (preview) URL.revokeObjectURL(preview);
+
+    const previewUrl = URL.createObjectURL(file);
+
     setImage(file);
-    setPreview(URL.createObjectURL(file));
+    setPreview(previewUrl);
     setResultImage(null);
   };
 
@@ -70,6 +83,12 @@ export default function BgRemove() {
 
       const blob = await uploadImage("/remove-bg", formData);
 
+      if (!blob || blob.size === 0) {
+        throw new Error("EMPTY_BLOB");
+      }
+
+      if (resultImage) URL.revokeObjectURL(resultImage);
+
       const imageUrl = URL.createObjectURL(blob);
       setResultImage(imageUrl);
 
@@ -84,6 +103,10 @@ export default function BgRemove() {
 
       if (err.message === "PREMIUM_REQUIRED") {
         setGate({ open: true, type: "premium" });
+      }
+
+      if (err.message === "EMPTY_BLOB") {
+        alert("Image processing failed. Try another image.");
       }
 
     } finally {
@@ -216,7 +239,6 @@ export default function BgRemove() {
     </>
   );
 }
-
 const css = `
   :root{
     --bg0:#050714;

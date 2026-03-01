@@ -6,14 +6,14 @@ export default function Home() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // ✅ Safe parse
+  /* ✅ parse profile only once */
   const savedProfile = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("profile") || "{}");
     } catch {
       return {};
     }
-  }, [user]);
+  }, []);
 
   const displayName = user?.displayName || savedProfile?.name || "User";
   const displayEmail = user?.email || savedProfile?.email || "";
@@ -23,11 +23,10 @@ export default function Home() {
   const [loadingMsg, setLoadingMsg] = useState("");
   const profileRef = useRef(null);
 
-  // Live parallax
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const stars = useMemo(() => Array.from({ length: 40 }, (_, i) => i), []);
 
-  // Close dropdown outside click
+  /* close dropdown */
   useEffect(() => {
     const onDown = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -38,15 +37,18 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  // Parallax move
+  /* ✅ parallax only desktop */
   useEffect(() => {
+    if (window.innerWidth <= 768) return;
+
     const onMove = (e) => {
       const w = window.innerWidth || 1;
       const h = window.innerHeight || 1;
-      const x = (e.clientX / w - 0.5) * 2; // -1..1
+      const x = (e.clientX / w - 0.5) * 2;
       const y = (e.clientY / h - 0.5) * 2;
       setParallax({ x, y });
     };
+
     window.addEventListener("mousemove", onMove);
     return () => window.removeEventListener("mousemove", onMove);
   }, []);
@@ -74,7 +76,8 @@ export default function Home() {
       <style>{css}</style>
 
       <div className="homePage">
-        {/* 🌌 LIVE SPACE BACKGROUND */}
+
+        {/* 🌌 BACKGROUND */}
         <div className="spaceBg" aria-hidden="true">
           <div className="spaceBase" />
 
@@ -126,9 +129,9 @@ export default function Home() {
           <div className="vignette" />
         </div>
 
-        {/* ✅ TOP NAV (CENTER BRAND) */}
+        {/* NAVBAR */}
         <header className="topBar">
-          <div className="tbSide" aria-hidden="true" />
+          <div className="tbSide" />
 
           <div className="brandCenter">
             <span className="dot" />
@@ -147,7 +150,6 @@ export default function Home() {
             ) : (
               <div className="profileWrap" ref={profileRef}>
                 <button
-                  type="button"
                   className="avatarBtn"
                   onClick={() => setShowDropdown((s) => !s)}
                 >
@@ -173,7 +175,7 @@ export default function Home() {
                       <div className="ddMail">{displayEmail}</div>
                     </div>
 
-                    <button type="button" className="ddBtn ddRed" onClick={handleLogout}>
+                    <button className="ddBtn ddRed" onClick={handleLogout}>
                       Logout
                     </button>
                   </div>
@@ -183,12 +185,14 @@ export default function Home() {
           </div>
         </header>
 
-        {/* ✅ HERO + 3 OPTIONS */}
+        {/* HERO */}
         <main className="hero">
           <div className="heroBadge">🌌 Space UI • Fast • Premium Ready</div>
 
           <h1 className="heroTitle neonFlicker">
-            <span className="sweepText sweepSlow">Create stunning images with AI</span>
+            <span className="sweepText sweepSlow">
+              Create stunning images with AI
+            </span>
           </h1>
 
           <p className="heroDesc">
@@ -199,9 +203,7 @@ export default function Home() {
             <button className="card" onClick={() => go("/bg-remove")}>
               <div className="cardIcon">🎯</div>
               <div className="cardText">
-                <div className="cardTitle">
-                  <span className="sweepText sweepFast">Background Remover</span>
-                </div>
+                <div className="cardTitle">Background Remover</div>
                 <div className="cardSub">Clean cut • Pro output</div>
               </div>
               <div className="arrow">›</div>
@@ -210,9 +212,7 @@ export default function Home() {
             <button className="card" onClick={() => go("/enhance")}>
               <div className="cardIcon">✨</div>
               <div className="cardText">
-                <div className="cardTitle">
-                  <span className="sweepText sweepMid">Image Enhancer</span>
-                </div>
+                <div className="cardTitle">Image Enhancer</div>
                 <div className="cardSub">Sharper • HD look</div>
               </div>
               <div className="arrow">›</div>
@@ -221,9 +221,7 @@ export default function Home() {
             <button className="card" onClick={() => go("/sketch")}>
               <div className="cardIcon">🎨</div>
               <div className="cardText">
-                <div className="cardTitle">
-                  <span className="sweepText sweepAlt">Pencil Sketch Effect</span>
-                </div>
+                <div className="cardTitle">Pencil Sketch Effect</div>
                 <div className="cardSub">Stylish • Realistic Sketch</div>
               </div>
               <div className="arrow">›</div>
