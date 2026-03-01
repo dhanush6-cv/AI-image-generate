@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 const upload = multer({ dest: "uploads/" });
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 /* ================= USAGE (FIRESTORE PERSISTENT) ================= */
 function getClient(req) {
@@ -223,5 +223,5 @@ app.post("/sketch",usageGuard, upload.single("image"), async (req, res) => {
 });
 /* ================= START ================= */
 app.listen(PORT, () => {
-  console.log("✅ Server running http://localhost:" + PORT);
+  console.log("✅ Server running http://localhost:" , PORT);
 });
