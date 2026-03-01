@@ -1,52 +1,56 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
+  onAuthStateChanged,
 } from "firebase/auth";
 import { auth } from "../firebase";
-
 import { resetUsage } from "../utils/usageGate";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState(localStorage.getItem("tempEmail") || "");
   const [password, setPassword] = useState(localStorage.getItem("tempPassword") || "");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
 
+  const emailRef = useRef(null);
+  const stars = useMemo(() => Array.from({ length: 28 }, (_, i) => i), []);
+
   const showMsg = (type, text) => setMsg({ type, text });
 
-  const stars = useMemo(() => Array.from({ length: 28 }, (_, i) => i), []);
-  const emailRef = useRef(null);
+  /* ✅ redirect if already logged */
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) navigate("/");
+    });
+    return () => unsub();
+  }, [navigate]);
 
   useEffect(() => {
     setTimeout(() => emailRef.current?.focus(), 50);
   }, []);
 
-  // =========================
-  // EMAIL LOGIN
-  // =========================
+  /* ================= EMAIL LOGIN ================= */
   const handleLogin = async (e) => {
     e.preventDefault();
-
     if (!email || !password) return showMsg("error", "Enter email and password.");
 
     try {
       setBusy(true);
-      setMsg({ type: "", text: "" });
-
       const res = await signInWithEmailAndPassword(auth, email.trim(), password);
 
       if (!res.user.emailVerified) {
-        showMsg("error", "Verify your email first ❌");
+        showMsg("error", "Verify email first ❌");
         await signOut(auth);
         return;
       }
 
-      // Save profile
       localStorage.setItem(
         "profile",
         JSON.stringify({
@@ -54,33 +58,26 @@ export default function Login() {
           email: res.user.email || "",
           photo: res.user.photoURL || "",
           uid: res.user.uid,
-          provider: "password",
         })
       );
 
       localStorage.removeItem("tempEmail");
       localStorage.removeItem("tempPassword");
-
-      // ⭐ RESET USAGE FOR NEW ACCOUNT
       resetUsage();
 
-      // ⭐ FULL PAGE RELOAD
       window.location.href = "/";
     } catch (err) {
       console.log(err);
-      showMsg("error", "Login failed. Check your email and password.");
+      showMsg("error", "Login failed.");
     } finally {
       setBusy(false);
     }
   };
 
-  // =========================
-  // GOOGLE LOGIN
-  // =========================
+  /* ================= GOOGLE LOGIN ================= */
   const handleGoogleLogin = async () => {
     try {
       setBusy(true);
-      setMsg({ type: "", text: "" });
 
       if (auth.currentUser) await signOut(auth);
 
@@ -97,14 +94,10 @@ export default function Login() {
           email: u.email || "",
           photo: u.photoURL || "",
           uid: u.uid,
-          provider: "google",
         })
       );
 
-      // ⭐ RESET USAGE
       resetUsage();
-
-      // ⭐ RELOAD
       window.location.href = "/";
     } catch (err) {
       console.log(err);
@@ -114,20 +107,14 @@ export default function Login() {
     }
   };
 
-  // =========================
-  // RESET PASSWORD
-  // =========================
+  /* ================= RESET PASSWORD ================= */
   const handleReset = async () => {
-    if (!email) return showMsg("info", "Enter your email first.");
-
+    if (!email) return showMsg("info", "Enter email first.");
     try {
       setBusy(true);
-      setMsg({ type: "", text: "" });
-
       await sendPasswordResetEmail(auth, email.trim());
-      showMsg("success", "Password reset link sent. Check inbox/spam.");
-    } catch (err) {
-      console.log(err);
+      showMsg("success", "Reset link sent.");
+    } catch {
       showMsg("error", "Reset failed.");
     } finally {
       setBusy(false);
@@ -135,124 +122,52 @@ export default function Login() {
   };
 
   return (
-    <>
-      <style>{css}</style>
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050714", color: "white" }}>
+      <div style={{ width: 350, padding: 30, borderRadius: 16, background: "#0b1020" }}>
+        <h2 style={{ textAlign: "center" }}>Login</h2>
 
-      <div className="authWrap">
-        {/* 🌌 Space background */}
-        <div className="spaceBg" aria-hidden="true">
-          <div className="spaceBase" />
-          <div className="nebula n1" />
-          <div className="nebula n2" />
-          <div className="nebula n3" />
-
-          <div className="starLayer">
-            {stars.map((i) => {
-              const top = (i * 37) % 100;
-              const left = (i * 61) % 100;
-              const delay = (i % 9) * 0.22;
-              const dur = 2.6 + (i % 7) * 0.45;
-              const size = i % 10 === 0 ? 3 : 2;
-
-              return (
-                <span
-                  key={i}
-                  className="star"
-                  style={{
-                    top: `${top}%`,
-                    left: `${left}%`,
-                    animationDelay: `${delay}s`,
-                    animationDuration: `${dur}s`,
-                    width: `${size}px`,
-                    height: `${size}px`,
-                  }}
-                />
-              );
-            })}
+        {msg.text && (
+          <div style={{ marginBottom: 10, textAlign: "center" }}>
+            {msg.text}
           </div>
+        )}
 
-          <div className="grain" />
-          <div className="vignette" />
-        </div>
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input
+            ref={emailRef}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-        {/* Card */}
-        <div className="shell">
-          <div className="right">
-            <div className="formHead">
-              <div className="brandRow">
-                <span className="dot" />
-                <span className="brandName">AI Image Studio</span>
-              </div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-              <h1 className="title neonFlicker">
-                <span className="sweepText sweepSlow">Login</span>
-              </h1>
-              <p className="sub">Continue to your dashboard</p>
-            </div>
+          <button disabled={busy}>
+            {busy ? "Please wait..." : "Login"}
+          </button>
+        </form>
 
-            {msg.text ? (
-              <div className={`flash ${msg.type}`}>
-                {msg.type === "error" ? "✖ " : msg.type === "success" ? "✔ " : "ℹ "}
-                {msg.text}
-              </div>
-            ) : null}
+        <button onClick={handleGoogleLogin} style={{ marginTop: 10, width: "100%" }}>
+          Continue with Google
+        </button>
 
-            <form className="formGrid" onSubmit={handleLogin}>
-              <div className="field">
-                <label>Email</label>
-                <input
-                  ref={emailRef}
-                  type="email"
-                  value={email}
-                  placeholder="example@gmail.com"
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  spellCheck={false}
-                />
-              </div>
+        <button onClick={handleReset} style={{ marginTop: 10, width: "100%" }}>
+          Forgot password
+        </button>
 
-              <div className="field">
-                <label>Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  placeholder="••••••••"
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-              </div>
-
-              <button className="btnPrimary" disabled={busy}>
-                {busy ? "Please wait..." : "Login"}
-              </button>
-
-              <button
-                type="button"
-                className="btnGhost"
-                onClick={handleGoogleLogin}
-                disabled={busy}
-              >
-                Continue with Google
-              </button>
-
-              <button type="button" className="btnLink" onClick={handleReset} disabled={busy}>
-                Forgot password?
-              </button>
-
-              <div className="formFoot">
-                <span>New user?</span>
-                <Link to="/register" className="linkStrong">
-                  Register
-                </Link>
-              </div>
-            </form>
-          </div>
-        </div>
+        <p style={{ textAlign: "center", marginTop: 15 }}>
+          New user? <Link to="/register">Register</Link>
+        </p>
       </div>
-    </>
+    </div>
   );
 }
-
 const css = `
   :root{
     --bg0:#050714;
