@@ -1,17 +1,17 @@
 const admin = require("firebase-admin");
 
-function getServiceAccount() {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!raw) throw new Error("FIREBASE_SERVICE_ACCOUNT is missing in env");
-  return JSON.parse(raw);
-}
+/*
+  Render environment variable la
+  FIREBASE_SERVICE_ACCOUNT nu full JSON string store panniruppa
+*/
 
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+// Firebase initialize (once only)
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(getServiceAccount()),
+    credential: admin.credential.cert(serviceAccount),
   });
 }
 
-const db = admin.firestore();
-
-module.exports = { admin, db };
+module.exports = admin;
