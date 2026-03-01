@@ -1,7 +1,7 @@
 import axios from "axios";
 import { auth } from "../firebase";
 
-const BASE = "https://ai-image-generate-r2mm.onrender.com";
+const BASE = "import.meta.env.VITE_API_URL";
 
 function getDeviceId() {
   let id = localStorage.getItem("deviceId");
