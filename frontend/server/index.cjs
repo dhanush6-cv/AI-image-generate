@@ -223,5 +223,5 @@ app.post("/sketch",usageGuard, upload.single("image"), async (req, res) => {
 });
 /* ================= START ================= */
 app.listen(PORT, () => {
-  console.log("✅ Server running http://localhost:" , PORT);
+  console.log("✅ Server running on port:" , PORT);
 });
