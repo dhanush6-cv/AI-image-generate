@@ -142,7 +142,9 @@ export default function Home() {
             <button className="btnPremium" onClick={() => go("/premium")}>
               ⭐ Premium
             </button>
-
+<button className="btnGhost" onClick={() => go("/contact")}>
+  Contact
+</button>
             {!user ? (
               <button className="btnGhost" onClick={() => go("/login")}>
                 Login
@@ -166,6 +168,7 @@ export default function Home() {
                     </div>
                   )}
                   <span className="chev">▾</span>
+                 
                 </button>
 
                 {showDropdown && (
