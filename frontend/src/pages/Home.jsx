@@ -145,6 +145,7 @@ export default function Home() {
 <button className="btnGhost" onClick={() => go("/contact")}>
   Contact
 </button>
+<button onClick={() => go("/terms")}>Terms & Conditions</button>
             {!user ? (
               <button className="btnGhost" onClick={() => go("/login")}>
                 Login
@@ -187,7 +188,15 @@ export default function Home() {
             )}
           </div>
         </header>
+<div style={{ marginTop: "30px", display: "flex", gap: "15px", justifyContent: "center" }}>
+  <button className="btnGhost" onClick={() => navigate("/terms")}>
+    Terms & Conditions
+  </button>
 
+  <button className="btnGhost" onClick={() => navigate("/refund")}>
+    Refund Policy
+  </button>
+</div>
         {/* HERO */}
         <main className="hero">
           <div className="heroBadge">🌌 Space UI • Fast • Premium Ready</div>
@@ -241,6 +250,7 @@ export default function Home() {
     </>
   );
 }
+
 
 const css = `
   :root{

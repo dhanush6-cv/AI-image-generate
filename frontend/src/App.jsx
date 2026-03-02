@@ -10,7 +10,8 @@ import ImageEnhancer from "./pages/ImageEnhancer";
 import BgRemove from "./pages/BgRemove";
 import Sketch from "./pages/Sketch";
 import Premium from "./pages/Premium";
-
+import Terms from "./pages/Terms";
+import Refund from "./pages/Refund";
 export default function App() {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
@@ -82,6 +83,8 @@ export default function App() {
         {/* Premium */}
         <Route path="/premium" element={<Premium />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/terms" element={<Terms />}/>
+      <Route path="/refund" element={<Refund/>}/>
         {/* fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

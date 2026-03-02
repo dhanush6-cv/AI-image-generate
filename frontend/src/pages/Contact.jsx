@@ -33,7 +33,7 @@ export default function Contact() {
       setMsg({ type: "", text: "" });
 
       // ✅ Launch-ku fast: mailto fallback (no backend needed)
-      const to = "dhanushkarthick610@gmail.com"; // 🔥 change this
+      //const to = "dhanushkarthick610@gmail.com"; // 🔥 change this
       const subject = encodeURIComponent(form.subject?.trim() || "Contact from AI Image Studio");
       const body = encodeURIComponent(
         `Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`
